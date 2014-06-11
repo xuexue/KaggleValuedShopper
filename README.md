@@ -14,10 +14,16 @@ Set up
 
 2. Download all data files into the directory `data`
 
-3. Go into a directory starting with `algo` and run `make all`
+3. Type `make all` in the root directory to generate all the files derived from
+   the data files that the algorithms will need
 
-4. This will generate prediction results in the `target` directory and output
+4. Go into a directory starting with `algo` and run `make all`
+
+5. This will generate prediction results in the `target` directory and output
    the area under the ROC curve
+
+6. Go into a directory starting with `algo` and run `make submission` to build the
+   submission file
 
 Development
 -----------

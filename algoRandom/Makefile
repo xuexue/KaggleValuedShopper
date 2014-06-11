@@ -1,5 +1,8 @@
-../target/resultRandom:
-	python run.py --data=../data/trainHistory --out=../target/resultRandom
+../target/resultRandomTest: ../interm/test
+	python run.py --data=../interm/test --out=../target/resultRandomTest
 
-all: ../target/resultRandom
-	python ../roc.py  --data=../data/trainHistory --out=../target/resultRandom
+all: ../target/resultRandomTest
+	python ../roc.py  --data=../interm/test --out=../target/resultRandomTest
+
+submission:
+	echo "You're not serious..."
