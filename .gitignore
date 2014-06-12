@@ -1,3 +1,4 @@
 data
 interm
 target
+*.pyc
