@@ -8,9 +8,9 @@ Set up
 
 1. Create folders:
 
-* `data/` for original data file
-* `interm/` for intermediate files
-* `target/` for prediction results
+    * `data/` for original data file
+    * `interm/` for intermediate files
+    * `target/` for prediction results
 
 2. Download all data files into the directory `data`
 
