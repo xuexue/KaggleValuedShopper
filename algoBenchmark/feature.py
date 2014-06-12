@@ -3,8 +3,7 @@ import random
 import argparse
 import dateutil.parser
 import csv
-import Queue
-import threading
+from multiprocessing import Process, Queue
 from collections import defaultdict
 
 # GLOBALS
@@ -98,6 +97,49 @@ def runOneFile(transactions, out, historydict, offersdict, HAS_REAL_VALUE=True):
     fill_derived_features(ftrs)
     write_data(outfile, id, ftrs, historydict, HAS_REAL_VALUE)
 
+def worker(q, HAS_REAL_VALUE, out, historydict, offersdict):
+    id = hash(random.random())
+    outf = out + ('_tmp_%d' % id)
+    headers = ['id'] + keys
+    if HAS_REAL_VALUE:
+        headers += ['repeater']
+    outfile = csv.writer(open(outf, 'w'))
+    outfile.writerow(headers)
+
+    while True:
+        events = q.get()
+        if events is None: break
+        ftrs = defaultdict(lambda: 0) # all default values happen to be zero
+        for event in events:
+            id = event['id']
+            offerid = historydict[id]['offer']
+            curroffer = offersdict[offerid]
+            datediff = historydict[id]['offerdate'] - dateutil.parser.parse(event['date'])
+            datediff = datediff.days
+            for col in ['company', 'category', 'brand']:
+                if curroffer[col] == event[col]:
+                    ftrs['has_bought_%s' % col] += 1
+                    ftrs['has_bought_%s_a' % col] += float(event['purchaseamount'])
+                    ftrs['has_bought_%s_q' % col] += float(event['purchasequantity'])
+                    if datediff < 30:
+                        ftrs['has_bought_%s_30' % col] += 1
+                    if datediff < 60:
+                        ftrs['has_bought_%s_60' % col] += 1
+                    if datediff < 90:
+                        ftrs['has_bought_%s_90' % col] += 1
+                    if datediff < 120:
+                        ftrs['has_bought_%s_120' % col] += 1
+                    if datediff < 150:
+                        ftrs['has_bought_%s_150' % col] += 1
+                    if datediff < 180:
+                        ftrs['has_bought_%s_180' % col] += 1
+            ftrs['total_spend'] += float(event['purchaseamount'])
+            ftrs['total_quantity'] += float(event['purchasequantity'])
+            ftrs['total_purchases'] += 1
+            ftrs['offer_value'] = curroffer['offervalue'] # kind of repeat
+        fill_derived_features(ftrs)
+        write_data(outfile, id, ftrs, historydict, HAS_REAL_VALUE)
+
 def run(offers, history, transactions, out):
     HAS_REAL_VALUE = False
 
@@ -115,69 +157,35 @@ def run(offers, history, transactions, out):
         item['offerdate'] = dateutil.parser.parse(item['offerdate'])
         historydict[item['id']] = item
 
-    q = Queue.Queue(maxsize=1000)
+    q = Queue(maxsize=3000)
 
     print('BEGIN!')
-    def worker():
-        id = hash(random.random())
-        out = '_tmp_%d' % id
-        headers = ['id'] + keys
-        if HAS_REAL_VALUE:
-            headers += ['repeater']
-        outfile = csv.writer(open(out, 'w'))
-        outfile.writerow(headers)
-
-        while True:
-            events = q.get()
-            ftrs = defaultdict(lambda: 0) # all default values happen to be zero
-            for event in events:
-                id = event['id']
-                offerid = historydict[id]['offer']
-                curroffer = offersdict[offerid]
-                datediff = historydict[id]['offerdate'] - dateutil.parser.parse(event['date'])
-                datediff = datediff.days
-                for col in ['company', 'category', 'brand']:
-                    if curroffer[col] == event[col]:
-                        ftrs['has_bought_%s' % col] += 1
-                        ftrs['has_bought_%s_a' % col] += float(event['purchaseamount'])
-                        ftrs['has_bought_%s_q' % col] += float(event['purchasequantity'])
-                        if datediff < 30:
-                            ftrs['has_bought_%s_30' % col] += 1
-                        if datediff < 60:
-                            ftrs['has_bought_%s_60' % col] += 1
-                        if datediff < 90:
-                            ftrs['has_bought_%s_90' % col] += 1
-                        if datediff < 120:
-                            ftrs['has_bought_%s_120' % col] += 1
-                        if datediff < 150:
-                            ftrs['has_bought_%s_150' % col] += 1
-                        if datediff < 180:
-                            ftrs['has_bought_%s_180' % col] += 1
-                ftrs['total_spend'] += float(event['purchaseamount'])
-                ftrs['total_quantity'] += float(event['purchasequantity'])
-                ftrs['total_purchases'] += 1
-                ftrs['offer_value'] = curroffer['offervalue'] # kind of repeat
-            fill_derived_features(ftrs)
-            write_data(outfile, id, ftrs, historydict, HAS_REAL_VALUE)
-            q.task_done()
-
-    for i in range(4):
-        t = threading.Thread(target=worker)
-        t.daemon = True
+    process = []
+    for i in range(7):
+        t = Process(target=worker, args=(q, HAS_REAL_VALUE, out, historydict, offersdict))
         t.start()
+        process.append(t)
 
     transactfile = csv.DictReader(open(transactions))
     events = []
     lastID = None
+    i = 0
     for event in transactfile:
         id = event['id']
         if id != lastID and lastID is not None:
             q.put(events)
             events = []
+            i += 1
+            if i % 1000 == 0: print i
+            if i == 5000: break
         lastID = id
         events.append(event)
-    events.append(event)
-    q.join()
+    q.put(events)
+    for p in process:
+        q.put(None)
+
+    for p in process:
+        p.join()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Test the result of an algo')
