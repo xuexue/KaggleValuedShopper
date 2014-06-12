@@ -7,7 +7,6 @@ Set up
 ------
 
 1. Create folders:
-
     * `data/` for original data file
     * `interm/` for intermediate files
     * `target/` for prediction results
