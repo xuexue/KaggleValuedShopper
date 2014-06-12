@@ -9,5 +9,9 @@
 all: ../target/resultBenchmarkTest
 	python ../roc.py  --data=../interm/test --out=../target/resultBenchmarkTest
 
+../interm/benchmarkFeaturesSubmit: ../data/testHistory ../interm/transact_submit
+	python feature.py --history=../data/testHistory --transactions=../interm/transact_submit --out=../interm/_benchmarkFeaturesSubmit
+	mv ../interm/_benchmarkFeatureSubmit ../interm/benchmarkFeatureSubmit
+
 submission:
-	echo "You're not serious..."
+	echo "Todo"
