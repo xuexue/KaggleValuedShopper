@@ -4,14 +4,14 @@
 
 ../interm/benchmarkFeaturesTest: ../interm/test ../interm/transact_test
 	python feature.py --history=../interm/test --transactions=../interm/transact_test --out=../interm/_benchmarkFeaturesTest
-	mv ../interm/_benchmarkFeatureTest ../interm/benchmarkFeatureTest
+	mv ../interm/_benchmarkFeaturesTest ../interm/benchmarkFeaturesTest
 
 all: ../target/resultBenchmarkTest
 	python ../roc.py  --data=../interm/test --out=../target/resultBenchmarkTest
 
 ../interm/benchmarkFeaturesSubmit: ../data/testHistory ../interm/transact_submit
-	python feature.py --history=../data/testHistory --transactions=../interm/transact_submit --out=../interm/_benchmarkFeaturesSubmit
-	mv ../interm/_benchmarkFeatureSubmit ../interm/benchmarkFeatureSubmit
+	pypy feature.py --history=../data/testHistory --transactions=../interm/transact_submit --out=../interm/_benchmarkFeaturesSubmit
+	mv ../interm/_benchmarkFeaturesSubmit ../interm/benchmarkFeaturesSubmit
 
 submission:
 	echo "Todo"

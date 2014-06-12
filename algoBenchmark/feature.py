@@ -11,12 +11,13 @@ keys_tmpl = ['has_bought_%s', 'has_bought_%s_a', 'has_bought_%s_q',
 keys = [x % y for x in keys_tmpl
         for y in ['company', 'category', 'brand']
         ] + ['total_spend', 'total_quantity', 'total_purchases',
-                'offer_value', 'has_never_bought_company',
+                'offer_value',
+                'has_never_bought_company',
                 'has_never_bought_brand',
                 'has_never_bought_category',
-                'has_never_bought_companY_brand',
-                'has_never_bought_category_brand',
-                'has_never_bought_category_company']
+                'has_bought_company_brand',
+                'has_bought_category_brand',
+                'has_bought_category_company']
 
 def fill_derived_features(ftrs):
     '''Helper function to add a couple of derived features'''
