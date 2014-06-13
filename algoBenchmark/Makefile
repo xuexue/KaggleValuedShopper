@@ -6,12 +6,12 @@
 	python feature.py --history=../interm/test --transactions=../interm/transact_test --out=../interm/_benchmarkFeaturesTest
 	mv ../interm/_benchmarkFeaturesTest ../interm/benchmarkFeaturesTest
 
-all: ../target/resultBenchmarkTest
-	python ../roc.py  --data=../interm/test --out=../target/resultBenchmarkTest
+all: ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest
+	echo "Run models.R instead"
 
 ../interm/benchmarkFeaturesSubmit: ../data/testHistory ../interm/transact_submit
 	pypy feature.py --history=../data/testHistory --transactions=../interm/transact_submit --out=../interm/_benchmarkFeaturesSubmit
 	mv ../interm/_benchmarkFeaturesSubmit ../interm/benchmarkFeaturesSubmit
 
-submission:
-	echo "Todo"
+submission: ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest ../interm/benchmarkFeaturesSubmit
+	echo "I dont know run the R stuff!"
