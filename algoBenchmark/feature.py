@@ -1,6 +1,6 @@
 '''Generate features CSV for the appropriate data'''
 import argparse
-import time
+from datetime import datetime
 from collections import defaultdict
 
 DATEFORMAT = "%Y-%m-%d"
@@ -63,8 +63,10 @@ def run(offers, history, transactions, out):
         line = line.strip().split(',')
         historydict[line[0]] = {
                 'offer': line[2],
-                'offerdate': time.mktime(time.strptime(line[4], DATEFORMAT))
+                'offerdate': datetime.strptime(line[-1], DATEFORMAT)
                 }
+        if HAS_REAL_VALUE:
+            historydict[line[0]]['repeater'] = line[-2]
 
     print('set up the transaction file %s and output file %s' % (transactions, out))
     headers = ['id'] + keys
@@ -99,15 +101,13 @@ def run(offers, history, transactions, out):
             i += 1
             if i % 1000 == 0:
                 print i
-            if i == 5000:
-                break
         lastID = id
 
         offerid = historydict[id]['offer']
         curroffer = offersdict[offerid]
 
-        dt = time.mktime(time.strptime(event['date'], DATEFORMAT))
-        datediff = (historydict[id]['offerdate'] - dt) / (60*60*24)
+        datediff = (historydict[id]['offerdate'] - datetime.strptime(event['date'], DATEFORMAT))
+        datediff = datediff.days
 
         for col in ['company', 'category', 'brand']:
             if curroffer[col] == event[col]:
