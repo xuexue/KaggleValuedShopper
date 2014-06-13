@@ -2,3 +2,5 @@ data
 interm
 target
 *.pyc
+*.swp
+*.DS_Store
