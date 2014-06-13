@@ -9,9 +9,11 @@
 all: ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest
 	echo "Run models.R instead"
 
-../interm/benchmarkFeaturesSubmit: ../data/testHistory ../interm/transact_submit
+../interm/benchmarkFeaturesSubmit: ../data/testHistory
 	pypy feature.py --history=../data/testHistory --transactions=../interm/transact_submit --out=../interm/_benchmarkFeaturesSubmit
 	mv ../interm/_benchmarkFeaturesSubmit ../interm/benchmarkFeaturesSubmit
 
-submission: ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest ../interm/benchmarkFeaturesSubmit
-	echo "I dont know run the R stuff!"
+../target/resultBenchmark: ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest ../interm/benchmarkFeaturesSubmit
+	RScript submission.R ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest ../interm/benchmarkFeaturesSubmit ../target/resultBenchmark
+
+submission: ../target/resultBenchmark

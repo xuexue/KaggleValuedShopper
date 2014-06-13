@@ -1,12 +1,12 @@
-setwd("/Users/xuexue/kaggle/shopper/algoBenchmark")
+#setwd("/Users/xuexue/kaggle/shopper/algoBenchmark")
 options("scipen"=100, "digits"=10)
 library(ROCR)
 args <- commandArgs(trailingOnly = TRUE)
-trainingfile <- args[0]
-testfile <- args[1]
+trainingfile <- args[1]
+testfile <- args[2]
 
-trainingfile <- '../interm/benchmarkFeaturesTrain'
-testfile <- '../interm/benchmarkFeaturesTest'
+#trainingfile <- '../interm/benchmarkFeaturesTrain'
+#testfile <- '../interm/benchmarkFeaturesTest'
 
 deleteOldRows <- function(df) {
   df$repeater <- (as.character(df$repeater) == 't')
