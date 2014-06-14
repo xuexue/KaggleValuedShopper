@@ -32,7 +32,8 @@ submitdf <- read.csv(submitfile, header=T)
 
 ##### quantile regression
 model.qt <- rq(repeater ~ ., tau= .5, data=fulldf)
-pred.qt <- predict(model.qt, submitdf)
+pred.qt <- predict(model.qt, submitdf, type="response")
+pred.qt <- pmax(0, pmin(1, pred.qt))
 
 ##### random forrest
 rfsubset <- fulldf
@@ -58,6 +59,7 @@ df.comb.submit <- data.frame(qt=pred.qt, rf=pred.rf)
 
 model.comb.glm <- glm(y ~ qt + rf, data=df.comb.train, family=binomial(link="logit"))
 pred.comb.glm <- predict(model.comb.glm, df.comb.submit, type="response")
+pred.comb.glm <- pmax(0, pmin(1, pred.comb.glm))
 
 output <- data.frame(id=submitdf$id, repeatProbability=pred.comb.glm)
 write.csv(output, file=outfile, row.names=FALSE, quote=FALSE)
