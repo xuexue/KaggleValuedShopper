@@ -1,12 +1,12 @@
-#setwd("/Users/xuexue/kaggle/shopper/algoBenchmark")
+setwd("/Users/xuexue/kaggle/shopper/algoBenchmark")
 options("scipen"=100, "digits"=10)
 library(ROCR)
 args <- commandArgs(trailingOnly = TRUE)
 trainingfile <- args[1]
 testfile <- args[2]
 
-#trainingfile <- '../interm/benchmarkFeaturesTrain'
-#testfile <- '../interm/benchmarkFeaturesTest'
+trainingfile <- '../interm/benchmarkFeaturesTrain'
+testfile <- '../interm/benchmarkFeaturesTest'
 
 deleteOldRows <- function(df) {
   df$repeater <- (as.character(df$repeater) == 't')
@@ -18,6 +18,9 @@ trainingdf <- deleteOldRows(trainingdf)
 trainingdf$id <- NULL
 testdf <- read.csv(testfile, header=T)
 testdf <- deleteOldRows(testdf)
+
+holdoutdf <- testdf[1:15960,]
+testdf <- testdf[15961:31921,]
 
 ##### quantile regression -- this seems to give the best results!
 library(quantreg)
@@ -51,7 +54,7 @@ rfsubset$has_bought_company_150 <- NULL
 #rfsubset$has_bought_brand_a <- NULL
 #rfsubset$has_bought_brand_q <- NULL
 #rfsubset$total_purchases <- NULL
-model.rf <- randomForest(as.factor(repeater) ~ ., data=rfsubset, ntree=500, maxnodes=30, nodesize=2, importance=T)
+model.rf <- randomForest(as.factor(repeater) ~ ., data=rfsubset, ntree=100, maxnodes=30, nodesize=5, importance=T)
 pred.rf <- predict(model.rf, testdf, type="prob")[,"TRUE"]
 performance(prediction(pred.rf, testdf$repeater), 'auc') 
 # RESULT WITH "BEST SUBSET" OF THE FEATURES 
@@ -82,7 +85,6 @@ pred.comb.linear <- 0.5 * (pred.rf + pred.qt)
 performance(prediction(pred.comb.linear, testdf$repeater), 'auc')  # == 0.6102466827
 
 ## GAM based on the result
-library(mgcv)
 df.comb.train <- data.frame(
   qt=predict(model.qt, trainingdf),
   rf=predict(model.rf, trainingdf, type="prob")[,"TRUE"],
@@ -103,6 +105,7 @@ pred.comb.glm <- predict(model.comb.glm, df.comb.test, type="response")
 pred.comb.glm <- pmin(1, pmax(0, pred.comb.glm))
 performance(prediction(pred.comb.glm, testdf$repeater), 'auc') # == 0.6117167186
 
+library(mgcv)
 model.comb.gam <- gam(y ~ s(qt) + s(rf), data=df.comb.train, family=binomial(link="logit"))
 pred.comb.gam <- predict(model.comb.gam, df.comb.test, type="response")
 pred.comb.gam <- pmin(1, pmax(0, pred.comb.gam))
