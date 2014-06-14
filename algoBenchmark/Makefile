@@ -16,4 +16,7 @@ all: ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest
 ../target/resultBenchmark: ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest ../interm/benchmarkFeaturesSubmit
 	RScript submission.R ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest ../interm/benchmarkFeaturesSubmit ../target/resultBenchmark
 
-submission: ../target/resultBenchmark
+../target/resultQT : ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest ../interm/benchmarkFeaturesSubmit
+	RScript qt.R ../interm/benchmarkFeaturesTrain ../interm/benchmarkFeaturesTest ../interm/benchmarkFeaturesSubmit ../target/resultQT
+
+submission: ../target/resultBenchmark ../target/resultQT
