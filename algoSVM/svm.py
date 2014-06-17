@@ -42,7 +42,7 @@ def run(train, test, outputTrain, outputTest):
     idTest, XNew, yNew = readAnnotatedFile(test)
 
     print("predicting svm value in test data")
-    y_probTest = [x[0] for x in clf.predict_proba(X)]
+    y_probTest = [x[0] for x in clf.predict_proba(XNew)]
     writeProbFile(outputTest, idTest, y_probTest)
 
     import pdb; pdb.set_trace()
