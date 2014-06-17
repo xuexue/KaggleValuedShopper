@@ -1,0 +1,18 @@
+Features
+-------------------------------------------------------
+features.py implements all the features described in "Beating the benchmark"
+
+Future Features 
+-------------------------------------------------------
+
+* Collaborative Filtering - Lisa
+Feature includes probability of a customer buying one product given that they bought another product. Product x Product Collaborative filtering will be focused on, however Customer x Customer may be viable
+
+* Mutual Exclusion
+How do we classify which items are equivalent, almost the same, or polar opposites. Collobartive filtering does some of this is that enough? Categories may help with this.
+
+* Price volatility
+What is the price of an item at the time of purchase. How much does the price generally change by, and how good is the offer relative to this.a
+
+* Offer active?
+When are offers active, do customers of the offered product when the offer is not active?
