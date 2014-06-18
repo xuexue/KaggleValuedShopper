@@ -45,21 +45,15 @@ rfsubset$has_never_bought_company <- NULL
 rfsubset$has_bought_company_180 <- NULL
 rfsubset$has_bought_company_150 <- NULL
 rfsubset$has_bought_company_150 <- NULL
-model.rf <- randomForest(as.factor(repeater) ~ ., data=rfsubset, ntree=500, maxnodes=30, nodesize=2, importance=T)
+model.rf <- randomForest(as.factor(repeater) ~ ., data=rfsubset, ntree=500, maxnodes=30, nodesize=5, importance=T)
 pred.rf <- predict(model.rf, submitdf, type="prob")[,"TRUE"]
 rm(rfsubset)
 
+##### read svm results
+pred.svm=read.csv('../target/resultSVMR', header=T)$repeatProbability
+
 ##### COMBINATIONS
-df.comb.train <- data.frame(
-  qt=predict(model.qt, fulldf),
-  rf=predict(model.rf, fulldf, type="prob")[,"TRUE"],
-  y=fulldf$repeater
-)
-df.comb.submit <- data.frame(qt=pred.qt, rf=pred.rf)
+pred.comb <- 0.08663332 + 3.71910523*pred.qt + 0.19873516*pred.rf + 0.62873995*pred.svm # coefficients from training data
 
-model.comb.glm <- glm(y ~ qt + rf, data=df.comb.train, family=binomial(link="logit"))
-pred.comb.glm <- predict(model.comb.glm, df.comb.submit, type="response")
-pred.comb.glm <- pmax(0, pmin(1, pred.comb.glm))
-
-output <- data.frame(id=submitdf$id, repeatProbability=pred.comb.glm)
+output <- data.frame(id=submitdf$id, repeatProbability=pred.comb)
 write.csv(output, file=outfile, row.names=FALSE, quote=FALSE)

@@ -22,6 +22,8 @@ testdf <- deleteOldRows(testdf)
 holdoutdf <- testdf[1:15960,]
 testdf <- testdf[15961:31921,]
 
+formula <- paste0("repeater ~ ", paste(colnames(trainingdf)[1:37], collapse=" + "))
+
 ##### quantile regression -- this seems to give the best results!
 library(quantreg)
 model.qt <- rq(repeater ~ ., tau= .5, data=trainingdf)
@@ -31,11 +33,11 @@ performance(prediction(pred.qt, testdf$repeater), 'auc') # == 0.5963949198
 # == 0.5946262694 (w/out 3)
 
 ##### dumb logistic regression model
-model.glm <- glm(repeater ~ ., data=trainingdf, family=binomial(link=logit))
-summary(model.glm)
-pred.glm <- predict(model.glm, testdf, type="response")
-performance(prediction(pred.glm, testdf$repeater), 'auc') # == 0.5039108188 (wtf?)
-# == 0.5311540869 (w/out 3)
+#model.glm <- glm(repeater ~ ., data=trainingdf, family=binomial(link=logit))
+#summary(model.glm)
+#pred.glm <- predict(model.glm, testdf, type="response")
+#performance(prediction(pred.glm, testdf$repeater), 'auc') # == 0.5039108188 (wtf?)
+## == 0.5311540869 (w/out 3)
 
 ##### random forest
 library(randomForest)
@@ -45,11 +47,11 @@ rfsubset$has_bought_category_company <- NULL
 rfsubset$has_bought_category_brand <- NULL
 rfsubset$has_never_bought_brand <- NULL
 # 40's
-rfsubset$has_bought_company_brand <- NULL
-rfsubset$has_never_bought_company <- NULL
-rfsubset$has_bought_company_180 <- NULL
-rfsubset$has_bought_company_150 <- NULL
-rfsubset$has_bought_company_150 <- NULL
+#rfsubset$has_bought_company_brand <- NULL
+#rfsubset$has_never_bought_company <- NULL
+#rfsubset$has_bought_company_180 <- NULL
+#rfsubset$has_bought_company_150 <- NULL
+#rfsubset$has_bought_company_150 <- NULL
 # 50's
 #rfsubset$has_bought_brand_a <- NULL
 #rfsubset$has_bought_brand_q <- NULL
@@ -80,6 +82,16 @@ performance(prediction(pred.rf, testdf$repeater), 'auc')
 
 ##### COMBINATIONS
 
+# READ SVM INPUT
+pred.svm.train <- read.csv('../target/resultSVMTrainProb', header=T)$repeatProbability
+pred.svm.test <- read.csv('../target/resultSVMTest', header=T)$repeatProbability
+pred.svm.holdout<- read.csv('../target/resultSVMHoldoutProb', header=T)$repeatProbability
+performance(prediction(pred.svm.test, testdf$repeater), 'auc')  # == 0.5979897535
+
+pred.pysvm.train <- 1 - read.csv('../target/resultSVMTrainPY', header=T)$repeatProbability
+pred.pysvm.test <- 1-read.csv('../target/resultSVMTestPY', header=T)$repeatProbability[15961:31921]
+performance(prediction(pred.pysvm.test, testdf$repeater), 'auc')  # == 
+
 ## Linear combination
 pred.comb.linear <- 0.5 * (pred.rf + pred.qt)
 performance(prediction(pred.comb.linear, testdf$repeater), 'auc')  # == 0.6102466827
@@ -88,30 +100,39 @@ performance(prediction(pred.comb.linear, testdf$repeater), 'auc')  # == 0.610246
 df.comb.train <- data.frame(
   qt=predict(model.qt, trainingdf),
   rf=predict(model.rf, trainingdf, type="prob")[,"TRUE"],
+  svm=pred.svm.train,
+  pysvm=pred.pysvm.train,
   y=trainingdf$repeater)
-df.comb.test <- data.frame(qt=pred.qt, rf=pred.rf)
-model.comb.gam <- gam(y ~ s(qt) + s(rf), data=df.comb.train)
-pred.comb.gam <- predict(model.comb.gam, df.comb.test)
-pred.comb.gam <- pmin(1, pmax(0, pred.comb.gam))
-performance(prediction(pred.comb.gam, testdf$repeater), 'auc') # == 0.611884483
+df.comb.test <- data.frame(
+  qt=pred.qt,
+  rf=pred.rf,
+  svm=pred.svm.test,
+  y=testdf$repeater)
+df.comb.holdout <- data.frame(
+  qt=predict(model.qt, holdoutdf),
+  rf=predict(model.rf, holdoutdf, type="prob")[,"TRUE"],
+  svm=pred.svm.holdout,
+  y=holdoutdf$repeater
+)
 
-model.comb.lm <- lm(y ~ qt + rf, data=df.comb.train)
-pred.comb.lm <- predict(model.comb.lm , df.comb.test, type="response")
-pred.comb.lm <- pmin(1, pmax(0, pred.comb.lm))
-performance(prediction(pred.comb.lm, testdf$repeater), 'auc') # == 0.6102897732
-
-model.comb.glm <- glm(y ~ qt + rf, data=df.comb.train, family=binomial(link="logit"))
-pred.comb.glm <- predict(model.comb.glm, df.comb.test, type="response")
-pred.comb.glm <- pmin(1, pmax(0, pred.comb.glm))
-performance(prediction(pred.comb.glm, testdf$repeater), 'auc') # == 0.6117167186
 
 library(mgcv)
-model.comb.gam <- gam(y ~ s(qt) + s(rf), data=df.comb.train, family=binomial(link="logit"))
-pred.comb.gam <- predict(model.comb.gam, df.comb.test, type="response")
-pred.comb.gam <- pmin(1, pmax(0, pred.comb.gam))
-performance(prediction(pred.comb.gam, testdf$repeater), 'auc') # == 0.611884483
+comb.holdout.auc <- function(model) {
+  pred <- predict(model, df.comb.holdout)
+  pred <- pmin(1, pmax(0, pred))
+  return(performance(prediction(pred, holdoutdf$repeater), 'auc'));
+}
 
-model.comb.gam <- gam(y ~ s(qt) + s(rf), data=df.comb.train)
-pred.comb.gam <- predict(model.comb.gam, df.comb.test)
-pred.comb.gam <- pmin(1, pmax(0, pred.comb.gam))
-performance(prediction(pred.comb.gam, testdf$repeater), 'auc') # == 0.6118256194
+comb.holdout.auc(gam(y ~ s(qt) + s(rf), data=df.comb.test)) # 0.5924835565
+comb.holdout.auc(gam(y ~ s(qt) + s(rf) + s(svm), data=df.comb.test)) # 0.5962423743
+comb.holdout.auc(lm(y ~ qt + rf, data=df.comb.test)) # 0.5957286903
+comb.holdout.auc(lm(y ~ qt + rf + svm, data=df.comb.test)) # 0.6131254921
+comb.holdout.auc(lm(y ~ rf + svm, data=df.comb.test)) # 0.5920854824
+comb.holdout.auc(glm(y ~ qt + rf, data=df.comb.test, family=binomial(link="logit"))) # 0.5451164022
+comb.holdout.auc(glm(y ~ qt + rf + svm, data=df.comb.test, family=binomial(link="logit"))) # 0.542866535
+
+comb.model <- lm(y ~ qt + rf + svm, data=rbind(df.comb.test, df.comb.holdout))
+summary(comb.model)
+pred <- predict(comb.model, df.comb.holdout)
+pred <- pmin(1, pmax(0, pred))
+summary(pred)
