@@ -49,7 +49,7 @@ write.csv(output, file=outfiletrain, row.names=FALSE, quote=FALSE)
 
 # holdout
 pred.svm.holdout <- predict(model.svm, holdoutdf, probability=TRUE)
-pred.svm.holdout.prob <- attr(pred.svm, 'probabilities')[,1]
+pred.svm.holdout.prob <- attr(pred.svm.holdout, 'probabilities')[,1]
 output <- data.frame(id=holdoutdf$id, repeatProbability=pred.svm.holdout.prob)
 write.csv(output, file=outfileholdout, row.names=FALSE, quote=FALSE)
 
