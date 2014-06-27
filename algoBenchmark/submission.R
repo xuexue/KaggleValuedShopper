@@ -34,6 +34,9 @@ submitdf <- read.csv(submitfile, header=T)
 model.qt <- rq(repeater ~ ., tau= .5, data=fulldf)
 pred.qt <- predict(model.qt, submitdf, type="response")
 pred.qt <- pmax(0, pmin(1, pred.qt))
+train.qt <- predict(model.qt, fulldf, type="response")
+train.qt <- pmax(0, pmin(1, train.qt))
+
 
 ##### random forrest
 rfsubset <- fulldf
@@ -47,13 +50,29 @@ rfsubset$has_bought_company_150 <- NULL
 rfsubset$has_bought_company_150 <- NULL
 model.rf <- randomForest(as.factor(repeater) ~ ., data=rfsubset, ntree=500, maxnodes=30, nodesize=5, importance=T)
 pred.rf <- predict(model.rf, submitdf, type="prob")[,"TRUE"]
+train.rf <- predict(model.rf, fulldf, type="prob")[,"TRUE"]
 rm(rfsubset)
 
 ##### read svm results
+train.svm=read.csv('../target/resultSVMTrain', header=T)$repeatProbability
 pred.svm=read.csv('../target/resultSVMR', header=T)$repeatProbability
 
 ##### COMBINATIONS
-pred.comb <- 0.08663332 + 3.71910523*pred.qt + 0.19873516*pred.rf + 0.62873995*pred.svm # coefficients from training data
+train.comb.data <- data.frame(
+    qt=train.qt,
+    rf=train.rf,
+    svm=train.svm,
+    y=fulldf$repeater
+)
+pred.comb.data <- data.frame(
+    qt=pred.qt,
+    rf=pred.rf,
+    svm=pred.svm
+)
+comb.model <- glm(y ~ qt + rf + svm, data=train.comb.data, family=binomial(link="logit"))
+pred.comb <- predict(comb.model, pred.comb.data, type="response")
+
+#pred.comb <- 0.08663332 + 3.71910523*pred.qt + 0.19873516*pred.rf + 0.62873995*pred.svm # coefficients from training data
 
 output <- data.frame(id=submitdf$id, repeatProbability=pred.comb)
 write.csv(output, file=outfile, row.names=FALSE, quote=FALSE)
