@@ -29,7 +29,7 @@ def run(train, test, outputTrain, outputTest):
     idTrain, X, y = readAnnotatedFile(train)
 
     print("initializing svm")
-    clf = svm.SVC(probability=True)
+    clf = svm.SVC(probability=True, C=1.0, cache_size=200, kernel='rbf')
 
     print("fitting svm")
     clf.fit(X, y)
